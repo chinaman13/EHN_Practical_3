@@ -79,6 +79,7 @@ def sha512_hash(data):
 
         # Compute intermediate hash value
 
+
     print("Hashing")
 
 
