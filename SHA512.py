@@ -35,13 +35,19 @@ K = [hex2ba("428a2f98d728ae22"), hex2ba("7137449123ef65cd"), hex2ba("b5c0fbcfec4
 
 
 # SHA-512 Hashing Function -------------------------------------------------------------------------
-def sha512_hash(data):
+def sha512_hash(data, type):
 
-    global h0, h1, h2, h3, h4, h5, h6, h7
+    global h0, h1, h2, h3, h4, h5, h6, h7, K
 
     # Pad message and separate into blocks
-    msg_blocks = sha512_padding(data)
-    len_blocks = len(msg_blocks)
+    if type == "text" or type == "textfile":
+        msg_blocks = sha512_padding_text(data)
+        len_blocks = len(msg_blocks)
+    elif type == "image":
+        print("Image")
+    else:
+        print("Error in data type.")
+        return "Error"
 
     for i in range(len_blocks):
 
@@ -51,8 +57,8 @@ def sha512_hash(data):
             w_t.append(msg_blocks[i][t*64:(t+1)*64:1])
 
         for t in range(16, 80):
-            w_t_value = (sigma_1(w_t[t-2]) + w_t[t-7] + sigma_0(w_t[t-15]) + w_t[t-16]) % (2**64)
-            w_t.append(w_t_value)
+            w_t_value = (ba2int(sigma_1(w_t[t-2])) + ba2int(w_t[t-7]) + ba2int(sigma_0(w_t[t-15])) + ba2int(w_t[t-16])) % (2**64)
+            w_t.append(int2ba(w_t_value, 64))
 
         # Initialise working variables
         a = h0
@@ -66,25 +72,40 @@ def sha512_hash(data):
 
         # Perform calculations
         for t in range(80):
-            t1 = (h + sum_1(e) + ch(e, f, g) + K[t] + w_t[t]) % (2**64)
-            t2 = (sum_0(a) + maj(a, b, c)) % (2**64)
+            s1 = ba2int(sum_1(e))
+            ch1 = ba2int(ch(e, f, g))
+            t1_int = (ba2int(h) + s1 + ch1 + ba2int(K[t]) + ba2int(w_t[t])) % (2**64)
+
+            s0 = ba2int(sum_0(a))
+            mj = ba2int(maj(a, b, c))
+            t2_int = (s0 + mj) % (2**64)
+
             h = g
             g = f
             f = e
-            e = d + t1
+            e = int2ba((ba2int(d) + t1_int) % (2**64), 64)
             d = c
             c = b
             b = a
-            a = t1 + t2
+            a = int2ba((t1_int + t2_int) % (2**64), 64)
 
         # Compute intermediate hash value
+        h0 = int2ba((ba2int(a) + ba2int(h0)) % (2 ** 64), 64)
+        h1 = int2ba((ba2int(b) + ba2int(h1)) % (2 ** 64), 64)
+        h2 = int2ba((ba2int(c) + ba2int(h2)) % (2 ** 64), 64)
+        h3 = int2ba((ba2int(d) + ba2int(h3)) % (2 ** 64), 64)
+        h4 = int2ba((ba2int(e) + ba2int(h4)) % (2 ** 64), 64)
+        h5 = int2ba((ba2int(f) + ba2int(h5)) % (2 ** 64), 64)
+        h6 = int2ba((ba2int(g) + ba2int(h6)) % (2 ** 64), 64)
+        h7 = int2ba((ba2int(h) + ba2int(h7)) % (2 ** 64), 64)
 
-
-    print("Hashing")
+    # Compute final digest
+    digest = h0 + h1 + h2 + h3 + h4 + h5 + h6 + h7
+    return ba2hex(digest)
 
 
 # SHA-512 Preprocessing (Padding) -----------------------------------------------------------------
-def sha512_padding(message):
+def sha512_padding_text(message):
 
     # Convert message to bits
     bits = bitarray()
@@ -124,12 +145,12 @@ def right_shift(word, num):
 # Perform circular right shift of n bits
 def circ_right_shift(word, num):
 
-    last_index = len(word)
     shifted = word
     for i in range(num):
-        temp = shifted[last_index - 1]
+        temp = shifted[-1]
         shifted = shifted >> 1
         shifted[0] = temp
+
     return shifted
 
 
@@ -178,7 +199,7 @@ def sum_1(word):
 
 # Ch function calculation
 def ch(x, y, z):
-    value = (x & y) ^ (x & z)
+    value = (x & y) ^ (~x & z)
     return value
 
 
@@ -187,14 +208,12 @@ def maj(x, y, z):
     value = (x & y) ^ (x & z) ^ (y & z)
     return value
 
-# TESTING -----------------------------------------------------------------------------------------
-#sha512_padding("abcdefgh")
 
-x = int2ba(57, 8)
-print(x)
-print(right_shift(x, 3))
-print(x)
-print(circ_right_shift(x, 4))
+# TESTING -----------------------------------------------------------------------------------------
+test = "logan"
+result = sha512_hash(test)
+print(result)
+
 
 
 
