@@ -96,9 +96,9 @@ def RC4_Decrypt(ciphertext, key):
                 B.append(int(ciphertext[h][w][2]))
 
         # Encrypt each image layer separately
-        RedCipher = coreFunction(S, R, False)
-        GreCipher = coreFunction(S, G, False)
-        BluCipher = coreFunction(S, B, False)
+        RedCipher = coreFunction(S, R)
+        GreCipher = coreFunction(S, G)
+        BluCipher = coreFunction(S, B)
 
         index = 0
         plainImage = np.zeros((imageHeight, imageWidth, 3))
@@ -172,7 +172,7 @@ def initS(key):
 
 # ---- Testing ---------------------------------------------------------------------------------------------------------
 
-
+"""
 # Plain text
 # key = "9876543210zyxwvutsrqponmlk" # Key 1
 key = "0123456789abcdefghijklmnop" # Key 2
@@ -197,7 +197,7 @@ print("Encrypted Ciphertext = ", encryption)
 print("Decrypted Plaintext  = ", decryption)
 print("Plaintext to Ciphertext similarity = " + str(similarity) + "%")
 print("____________________________________________________________________________________________________________\n")
-
+"""
 
 
 

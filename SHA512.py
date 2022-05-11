@@ -220,9 +220,9 @@ def maj(x, y, z):
 
 
 # TESTING -----------------------------------------------------------------------------------------
-test = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
-result = sha512_hash(test, "textfile")
-print(result)
+#test = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+#result = sha512_hash(test, "textfile")
+#print(result)
 
 """
 imageFile = Image.open("circuit.jpg")
