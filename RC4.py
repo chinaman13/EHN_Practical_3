@@ -8,54 +8,20 @@ from bitarray.util import ba2hex, hex2ba, ba2int, int2ba
 # ---- RC4 Encryption  -------------------------------------------------------------------------------------------------
 def RC4_Encrypt(plaintext, key):
 
-    if isinstance(plaintext, str):
+    plainList = []
+    for i in range(0, len(plaintext), 2):
+        ch = hex2ba(plaintext[i] + plaintext[i+1])
+        intCh = ba2int(ch)
+        plainList.append(intCh)
 
-        plainList = []
-        for i in range(len(plaintext)):
-            plainList.append(ord(plaintext[i]))
+    S = initS(key)
+    cipherVals = coreFunction(S, plainList)
+    cipherText = ""
+    for i in range(len(cipherVals)):
+        cipherText += chr(cipherVals[i])
 
-        S = initS(key)
-        cipherVals = coreFunction(S, plainList)
-        cipherText = ""
-        for i in range(len(cipherVals)):
-            cipherText += chr(cipherVals[i])
+    return cipherText
 
-        return cipherText
-    else:
-
-        S = initS(key)
-        imageHeight = len(plaintext)
-        imageWidth = len(plaintext[0])
-
-        R = []
-        G = []
-        B = []
-
-        # Separate image into Red, Green and Blue layers
-        for h in range(imageHeight):
-            for w in range(imageWidth):
-                R.append(int(plaintext[h][w][0]))
-                G.append(int(plaintext[h][w][1]))
-                B.append(int(plaintext[h][w][2]))
-
-        # Encrypt each image layer separately
-        RedCipher = coreFunction(S, R, False)
-        GreCipher = coreFunction(S, G, False)
-        BluCipher = coreFunction(S, B, False)
-
-
-        index = 0
-        cipherImage = np.zeros((imageHeight, imageWidth, 3))
-
-        # Reconstruct encrypted values back into ndarray
-        for h in range(imageHeight):
-            for w in range(imageWidth):
-                cipherImage[h][w][0] = RedCipher[index]
-                cipherImage[h][w][1] = GreCipher[index]
-                cipherImage[h][w][2] = BluCipher[index]
-                index += 1
-
-        return cipherImage
 
 # ----------------------------------------------------------------------------------------------------------------------
 

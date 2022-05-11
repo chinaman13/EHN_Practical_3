@@ -6,6 +6,7 @@ import numpy as np
 
 
 global findnx
+plaintexKey = ""
 
 #===============================Pseduo Random Number Generator =====================================================
 def PRNG(numberOfRandomValues , size):
@@ -160,6 +161,7 @@ def ReciverAutoGeneratePrdouceKeys():
 def EncryptUsingPublicKey(key):
     print()
     print()
+    global plaintexKey
     GenrateRC4 = input("TRANSMITTER Please Enter RC4 key (ascii) or Press Enter: ")
     if(GenrateRC4 ==''):
         randomRC4key = ''
@@ -259,10 +261,12 @@ def DecryptUsingPrivateKey(ciphertext,key2):
     return ascii_cihper
 
 
+
+"""
 GeneratedKeys = ReciverAutoGeneratePrdouceKeys()
 PublicKey = GeneratedKeys[0]
 x = EncryptUsingPublicKey(PublicKey)
 PrivateKey = GeneratedKeys[1]
 y =DecryptUsingPrivateKey(x,PrivateKey)
 print(y)
-
+"""
