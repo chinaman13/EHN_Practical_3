@@ -1,17 +1,10 @@
 # IMPORTS ------------------------------------------------------------------------------------------
+import numpy as np
+from PIL import Image
 from bitarray import bitarray
 from bitarray.util import ba2int, hex2ba, ba2hex, int2ba
 
 # CONSTANTS ---------------------------------------------------------------------------------------
-h0 = hex2ba("6a09e667f3bcc908")
-h1 = hex2ba("bb67ae8584caa73b")
-h2 = hex2ba("3c6ef372fe94f82b")
-h3 = hex2ba("a54ff53a5f1d36f1")
-h4 = hex2ba("510e527fade682d1")
-h5 = hex2ba("9b05688c2b3e6c1f")
-h6 = hex2ba("1f83d9abfb41bd6b")
-h7 = hex2ba("5be0cd19137e2179")
-
 K = [hex2ba("428a2f98d728ae22"), hex2ba("7137449123ef65cd"), hex2ba("b5c0fbcfec4d3b2f"), hex2ba("e9b5dba58189dbbc"),
      hex2ba("3956c25bf348b538"), hex2ba("59f111f1b605d019"), hex2ba("923f82a4af194f9b"), hex2ba("ab1c5ed5da6d8118"),
      hex2ba("d807aa98a3030242"), hex2ba("12835b0145706fbe"), hex2ba("243185be4ee4b28c"), hex2ba("550c7dc3d5ffb4e2"),
@@ -37,14 +30,20 @@ K = [hex2ba("428a2f98d728ae22"), hex2ba("7137449123ef65cd"), hex2ba("b5c0fbcfec4
 # SHA-512 Hashing Function -------------------------------------------------------------------------
 def sha512_hash(data, type):
 
-    global h0, h1, h2, h3, h4, h5, h6, h7, K
+    global K
+    h0 = hex2ba("6a09e667f3bcc908")
+    h1 = hex2ba("bb67ae8584caa73b")
+    h2 = hex2ba("3c6ef372fe94f82b")
+    h3 = hex2ba("a54ff53a5f1d36f1")
+    h4 = hex2ba("510e527fade682d1")
+    h5 = hex2ba("9b05688c2b3e6c1f")
+    h6 = hex2ba("1f83d9abfb41bd6b")
+    h7 = hex2ba("5be0cd19137e2179")
 
     # Pad message and separate into blocks
-    if type == "text" or type == "textfile":
-        msg_blocks = sha512_padding_text(data)
+    if type == "text" or type == "textfile" or type == "image":
+        msg_blocks = sha512_padding(data, type)
         len_blocks = len(msg_blocks)
-    elif type == "image":
-        print("Image")
     else:
         print("Error in data type.")
         return "Error"
@@ -105,12 +104,23 @@ def sha512_hash(data, type):
 
 
 # SHA-512 Preprocessing (Padding) -----------------------------------------------------------------
-def sha512_padding_text(message):
+def sha512_padding(message, type):
 
-    # Convert message to bits
-    bits = bitarray()
-    byte = bytes(message, 'utf-8')
-    bits.frombytes(byte)
+    if type == "text" or type == "textfile":
+        # Convert message to bits
+        bits = bitarray()
+        byte = bytes(message, 'utf-8')
+        bits.frombytes(byte)
+    elif type == "image":
+        # Image dimensions
+        imageHeight = len(message)
+        imageWidth = len(message[0])
+        # Convert image to bits
+        bits = bitarray()
+        for i in range(imageHeight):
+            for j in range(imageWidth):
+                for k in range(3):
+                    bits += int2ba(int(message[i][j][k]))
 
     # Length of bits
     l = len(bits)
@@ -210,11 +220,19 @@ def maj(x, y, z):
 
 
 # TESTING -----------------------------------------------------------------------------------------
-test = "logan"
-result = sha512_hash(test)
-print(result)
+test = "shane"
+result = sha512_hash(test, "textfile")
+print("GAYBOY")
+#print(result)
 
+"""
+imageFile = Image.open("circuit.jpg")
+imageArray = np.array(imageFile)
+imageHash = sha512_hash(imageArray, "image")
+print(imageHash)
 
-
-
-
+imageFile = Image.open("circuit.jpg")
+imageArray = np.array(imageFile)
+imageHash = sha512_hash(imageArray, "image")
+print(imageHash)
+"""
