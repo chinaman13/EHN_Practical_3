@@ -3,7 +3,8 @@ import RC4
 import RSA
 from PIL import Image
 import numpy as np
-from bitarray.util import int2ba, ba2hex
+from bitarray.util import int2ba, ba2hex, ba2int
+import random
 import bitarray
 
 imageHeight = 0
@@ -18,23 +19,41 @@ class Transmitter:
         self.fullDigest = ""
         self.ciphertext = ""
         self.ciphertextHex = ""
+        self.imageArray = np.empty((0))
 
     def get_RSA_pub_key(self, pubKey):
         self.encryptedKey = RSA.EncryptUsingPublicKey(pubKey)
 
     def generate_hash(self, message, type):
-        self.hash = SHA512.sha512_hash(message, type)
+        if type == "textfile":
+            textFile = open(message, "r+")
+            textData = textFile.read()
+            self.hash = SHA512.sha512_hash(textData, type)
+        else:
+            self.hash = SHA512.sha512_hash(message, type)
         print("TRANSMITTER Plaintext Hash:")
         print(self.hash.upper())
 
     def concatenate_digest(self, data, type, height, width):
         digest = ""
-        if type == "text" or type == "textfile":
+        if type == "text":
             for i in range(len(data)):
                 baVal = int2ba(ord(data[i]), 8)
                 hexVal = ba2hex(baVal)
                 digest += hexVal
             digest += self.hash
+        elif type == "textfile":
+            textFile = open(data, "r")
+            textData = textFile.read()
+            for i in range(len(textData)):
+                baVal = int2ba(ord(textData[i]), 8)
+                hexVal = ba2hex(baVal)
+                digest += hexVal
+            digest += self.hash
+            textFile.close()
+            textFile = open(data, "w")
+            textFile.write(digest)
+            textFile.close()
         else:
             for i in range(height):
                 for j in range(width):
@@ -46,20 +65,33 @@ class Transmitter:
 
         self.fullDigest = digest
 
-    def encrypt_digest(self):
+    def encrypt_digest(self, type, height, width):
         print("TRANSMITTER RC4 Encrypted Ciphertext:")
         self.ciphertext = RC4.RC4_Encrypt(self.fullDigest, RSA.plaintexKey)
 
-        for i in range(len(self.ciphertext)):
-            baVal = int2ba(ord(self.ciphertext[i]), 8)
-            hexVal = ba2hex(baVal)
-            self.ciphertextHex += hexVal
+        if type == "text" or type == "textfile":
+            for i in range(len(self.ciphertext)):
+                baVal = int2ba(ord(self.ciphertext[i]), 8)
+                hexVal = ba2hex(baVal)
+                self.ciphertextHex += hexVal
 
-        print(self.ciphertextHex)
+            print(self.ciphertextHex)
+        else:
+            for i in range(len(self.ciphertext)):
+                baVal = int2ba(ord(self.ciphertext[i]), 8)
+                hexVal = ba2hex(baVal)
+                self.ciphertextHex += hexVal
 
-
-    def send_digest(self):
-        print("Encrypted digest sent")
+            index = 0
+            self.imageArray = np.zeros((height, width, 3))
+            for i in range(height):
+                for j in range(width):
+                    for k in range(3):
+                        self.imageArray[i][j][k] = ord(self.ciphertext[index])
+                        index += 1
+            print("Encrypted image displayed.")
+            encryptImage = Image.fromarray(np.uint8(self.imageArray)).convert('RGB')
+            encryptImage.show()
 
 
 class Receiver:
@@ -93,6 +125,21 @@ class Receiver:
         start = len(self.plainText) - 64
         end = len(self.plainText)
 
+        chance = random.randint(0, 10)
+        if chance == 5:
+            index = random.randint(0, 3)
+            listString = list(self.plainText)
+            intVal = ord(listString[index])
+            baVal = int2ba(intVal, 8)
+            index2 = random.randint(0, 8)
+            if baVal[index2] == 0:
+                baVal[index2] = 1
+            else:
+                baVal[index2] = 0
+            intVal = ba2int(baVal)
+            listString[index] = chr(intVal)
+            self.plainText = ''.join(listString)
+
         if type == "text" or type == "textfile":
             for i in range(0, start):
                 self.plainTextSlice += self.plainText[i]
@@ -114,9 +161,11 @@ class Receiver:
         if type == "text" or type == "textfile":
             print(self.plainTextSlice)
         else:
-            print(self.imageArray)
+            print("Image displayed.")
+            encryptImage = Image.fromarray(np.uint8(self.imageArray)).convert('RGB')
+            encryptImage.show()
 
-        print("RECEIVER Expected Hash:")
+        print("\nRECEIVER Expected Hash:")
         print(self.receivedHash)
 
     def generate_hash(self, type):
@@ -130,9 +179,9 @@ class Receiver:
 
     def message_auth(self):
         if self.hashCheck == self.receivedHash:
-            print("Message Authenticated.")
+            print("\nMessage Authenticated.")
         else:
-            print("Message Authentication Failed.")
+            print("\nMessage Authentication Failed.")
 
 
 def SimulationSystem():
@@ -149,13 +198,18 @@ def SimulationSystem():
     rec.get_RC4_key(tra.encryptedKey)
 
     # Phase 2 = Data signing and encryption
-    print("Phase 2")
+    print("\n--------------- Phase 2 ---------------")
     message = input("TRANSMITTER Please Enter a message: ")
     print()
 
     if message.__contains__(".txt"):
         type = "textfile"
         print("TRANSMITTER Loading message from file \'" + message + "\':")
+        textFile = open(message, "r")
+        data = message
+        textData = textFile.read()
+        textFile.close()
+        print(textData + "\n")
     elif message.__contains__(".png"):
         type = "image"
         print("TRANSMITTER Loading image data from file \'" + message + "\':")
@@ -163,6 +217,9 @@ def SimulationSystem():
         data = np.array(image)
         imageHeight = len(data)
         imageWidth = len(data[0])
+        image.close()
+        ogImage = Image.fromarray(np.uint8(data)).convert('RGB')
+        ogImage.show()
     else:
         type = "text"
         data = message
@@ -172,10 +229,10 @@ def SimulationSystem():
     # Transmitter appends message and hash to form digest
     tra.concatenate_digest(data, type, imageHeight, imageWidth)
     # Transmitter encrypts the digest using RC4
-    tra.encrypt_digest()
+    tra.encrypt_digest(type, imageHeight, imageHeight)
 
     # Phase 3 = Data decryption and authentication
-    print("Phase 3")
+    print("\n--------------- Phase 3 ---------------")
     # Receiver gets the encrypted ciphertext from the transmitter
     rec.get_ciphertext(tra.ciphertextHex)
     # Receiver decrypts the data stream using RC4 to get the received digest
