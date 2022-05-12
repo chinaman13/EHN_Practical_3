@@ -219,19 +219,3 @@ def maj(x, y, z):
     return value
 
 
-# TESTING -----------------------------------------------------------------------------------------
-#test = "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
-#result = sha512_hash(test, "textfile")
-#print(result)
-
-"""
-imageFile = Image.open("circuit.jpg")
-imageArray = np.array(imageFile)
-imageHash = sha512_hash(imageArray, "image")
-print(imageHash)
-
-imageFile = Image.open("circuit.jpg")
-imageArray = np.array(imageFile)
-imageHash = sha512_hash(imageArray, "image")
-print(imageHash)
-"""

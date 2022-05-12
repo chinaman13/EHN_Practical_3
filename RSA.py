@@ -207,12 +207,8 @@ def EncryptUsingPublicKey(key):
         individual = format(ord(i), "02x")
         hexofkey = hexofkey + individual
 
-    hexkey = ''
-    n = 2  # every 2 characters
-    split_strings = [hexofkey[i:i + n] for i in range(0, len(hexofkey), n)]
-    for i in split_strings:
-        hexkey = hexkey + i
-    print("TRANSMITTER Auto Generating RC4 key: ",split_strings)
+    print("TRANSMITTER Auto Generating RC4 key: ")
+    printing_hex(hexofkey)
 
 
     hex_of_plaintext = ''
@@ -244,14 +240,9 @@ def EncryptUsingPublicKey(key):
         encrypt = pow(encrypt,key[0],key[1])
         ciphertext.append(encrypt)
 
-    print("TRANSMITTER RSA encrypt RC4 KEY: ", ciphertext)
+    print("TRANSMITTER RSA encrypt RC4 KEY: ")
+    print(ciphertext)
     return ciphertext
-
-
-
-
-
-
 
 
 def DecryptUsingPrivateKey(ciphertext,key2):
@@ -279,16 +270,25 @@ def DecryptUsingPrivateKey(ciphertext,key2):
         individual = format(ord(i), "02x")
         hexofkey = hexofkey + individual
 
-    hexkey = ''
-    n = 2  # every 2 characters
-    split_strings = [hexofkey[i:i + n] for i in range(0, len(hexofkey), n)]
-    for i in split_strings:
-        hexkey = hexkey + i
-    print("RECIVER RSA decrypted RC4 key    : ", split_strings)
+    print("RECIVER RSA decrypted RC4 key: ")
+    printing_hex(hexofkey)
 
     return ascii_cihper
 
 
+# Format output hex values
+def printing_hex(data):
+
+    length = len(data)
+    line = ""
+    for i in range(0, length, 2):
+        if i % 60 == 0 and i != 0:
+            print(line)
+            line = ""
+            line += data[i].upper() + data[i + 1].upper() + " "
+        else:
+            line += data[i].upper() + data[i+1].upper() + " "
+    print(line)
 
 """
 GeneratedKeys = ReciverAutoGeneratePrdouceKeys()

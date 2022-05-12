@@ -11,6 +11,7 @@ imageHeight = 0
 imageWidth = 0
 
 
+# Class to simulate functionality of a transmitter
 class Transmitter:
 
     def __init__(self):
@@ -21,9 +22,11 @@ class Transmitter:
         self.ciphertextHex = ""
         self.imageArray = np.empty((0))
 
+    # Get the RSA public key from the receiver
     def get_RSA_pub_key(self, pubKey):
         self.encryptedKey = RSA.EncryptUsingPublicKey(pubKey)
 
+    # Calculate the hash value of the plaintext or image
     def generate_hash(self, message, type):
         if type == "textfile":
             textFile = open(message, "r+")
@@ -32,16 +35,19 @@ class Transmitter:
         else:
             self.hash = SHA512.sha512_hash(message, type)
         print("TRANSMITTER Plaintext Hash:")
-        print(self.hash.upper())
+        printing_hex(self.hash.upper())
 
+    # Create the full digest (consists of message + hash)
     def concatenate_digest(self, data, type, height, width):
         digest = ""
+        # Create digest for text from terminal
         if type == "text":
             for i in range(len(data)):
                 baVal = int2ba(ord(data[i]), 8)
                 hexVal = ba2hex(baVal)
                 digest += hexVal
             digest += self.hash
+        # Create digest for text from text file
         elif type == "textfile":
             textFile = open(data, "r")
             textData = textFile.read()
@@ -54,6 +60,7 @@ class Transmitter:
             textFile = open(data, "w")
             textFile.write(digest)
             textFile.close()
+        # Create digest for an image
         else:
             for i in range(height):
                 for j in range(width):
@@ -65,17 +72,20 @@ class Transmitter:
 
         self.fullDigest = digest
 
+    # Encrypt the full digest using the RC4 cipher
     def encrypt_digest(self, type, height, width):
         print("TRANSMITTER RC4 Encrypted Ciphertext:")
         self.ciphertext = RC4.RC4_Encrypt(self.fullDigest, RSA.plaintexKey)
 
+        # Encrypt text from terminal or text file
         if type == "text" or type == "textfile":
             for i in range(len(self.ciphertext)):
                 baVal = int2ba(ord(self.ciphertext[i]), 8)
                 hexVal = ba2hex(baVal)
                 self.ciphertextHex += hexVal
 
-            print(self.ciphertextHex)
+            printing_hex(self.ciphertextHex)
+        # Encrypt an image
         else:
             for i in range(len(self.ciphertext)):
                 baVal = int2ba(ord(self.ciphertext[i]), 8)
@@ -94,6 +104,7 @@ class Transmitter:
             encryptImage.show()
 
 
+# Class to simulate functionality of a receiver
 class Receiver:
 
     def __init__(self):
@@ -108,24 +119,29 @@ class Receiver:
         self.receivedHash = ""
         self.hashCheck = ""
 
+    # Send the RSA public key to the transmitter
     def send_RSA_pub_key(self):
         keys = RSA.ReciverAutoGeneratePrdouceKeys()
         self.publicKey = keys[0]
         self.privateKey = keys[1]
 
+    # Obtain the encrypted RC4 key from the transmitter
     def get_RC4_key(self, key):
         self.encryptRC4Key = key
         self.decryptRC4Key = RSA.DecryptUsingPrivateKey(key, self.privateKey)
 
+    # Obatine the ciphertext from the transmitter
     def get_ciphertext(self, ciphertext):
         self.cipherText = ciphertext
 
+    # Decrypt the received data stream ciphertext
     def decrypt_data_stream(self, type, height, width):
         self.plainText = RC4.RC4_Encrypt(self.cipherText, self.decryptRC4Key)
         start = len(self.plainText) - 64
         end = len(self.plainText)
 
-        chance = random.randint(0, 10)
+        # Chance of randomly flipping a bit in the first 4 bytes
+        chance = random.randint(0, 9)
         if chance == 5:
             index = random.randint(0, 3)
             listString = list(self.plainText)
@@ -140,6 +156,7 @@ class Receiver:
             listString[index] = chr(intVal)
             self.plainText = ''.join(listString)
 
+        # Extract received plain text
         if type == "text" or type == "textfile":
             for i in range(0, start):
                 self.plainTextSlice += self.plainText[i]
@@ -152,6 +169,7 @@ class Receiver:
                         self.imageArray[i][j][k] = ord(self.plainText[index])
                         index += 1
 
+        # Extract received hash value
         for i in range(start, end):
             baVal = int2ba(ord(self.plainText[i]), 8)
             hexval = ba2hex(baVal)
@@ -166,8 +184,9 @@ class Receiver:
             encryptImage.show()
 
         print("\nRECEIVER Expected Hash:")
-        print(self.receivedHash)
+        printing_hex(self.receivedHash)
 
+    # Calculate the hash value of the received plaintext message
     def generate_hash(self, type):
         if type == "text" or type == "textfile":
             self.hashCheck = SHA512.sha512_hash(self.plainTextSlice, type)
@@ -175,8 +194,9 @@ class Receiver:
             self.hashCheck = SHA512.sha512_hash(self.imageArray, type)
 
         print("RECEIVER Received Hash:")
-        print(self.hashCheck.upper())
+        printing_hex(self.hashCheck)
 
+    # Authenticate the received message by comparing hash values
     def message_auth(self):
         if self.hashCheck == self.receivedHash:
             print("\nMessage Authenticated.")
@@ -184,10 +204,26 @@ class Receiver:
             print("\nMessage Authentication Failed.")
 
 
+# Format output hex values
+def printing_hex(data):
+
+    length = len(data)
+    line = ""
+    for i in range(0, length, 2):
+        if i % 40 == 0 and i != 0:
+            print(line)
+            line = ""
+            line += data[i].upper() + data[i + 1].upper() + " "
+        else:
+            line += data[i].upper() + data[i+1].upper() + " "
+    print(line)
+
+
 def SimulationSystem():
 
     global imageHeight, imageWidth
 
+    # Transmitter and Receiver class objects
     rec = Receiver()
     tra = Transmitter()
 
@@ -202,6 +238,7 @@ def SimulationSystem():
     message = input("TRANSMITTER Please Enter a message: ")
     print()
 
+    # Message is a text file
     if message.__contains__(".txt"):
         type = "textfile"
         print("TRANSMITTER Loading message from file \'" + message + "\':")
@@ -210,6 +247,7 @@ def SimulationSystem():
         textData = textFile.read()
         textFile.close()
         print(textData + "\n")
+    # Message is an image
     elif message.__contains__(".png"):
         type = "image"
         print("TRANSMITTER Loading image data from file \'" + message + "\':")
@@ -220,6 +258,7 @@ def SimulationSystem():
         image.close()
         ogImage = Image.fromarray(np.uint8(data)).convert('RGB')
         ogImage.show()
+    # Message is plain text from terminal
     else:
         type = "text"
         data = message
